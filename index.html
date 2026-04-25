@@ -1333,6 +1333,7 @@
       const [phase, setPhase] = useState("game");
       const [allCards, setAllCards] = useState([]);
       const [selected, setSelected] = useState(null);
+      const [hasSelectedCard, setHasSelectedCard] = useState(false);
       const [matchedPairs, setMatchedPairs] = useState(new Set());
       const [timeLeft, setTimeLeft] = useState(GAME_TIME);
       const [totalPairs, setTotalPairs] = useState(0);
@@ -1529,6 +1530,7 @@
 
         if (!selected) {
           setSelected(card);
+          setHasSelectedCard(true);
           return;
         }
 
@@ -1750,10 +1752,10 @@
                 {/* ×ボタン */}
                 <button
                   onClick={() => {
-                    if (totalPairs === 0) {
-                      onMenu();
-                    } else {
+                    if (hasSelectedCard) {
                       setPhase("result");
+                    } else {
+                      onMenu();
                     }
                   }}
                   style={{
