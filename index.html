@@ -691,9 +691,12 @@
       const [wrongWords, setWrongWords] = useState([]); // 間違えた単語
       const [checkedWords, setCheckedWords] = useState(new Set()); // チェックされた単語ID
       const [addedWords, setAddedWords] = useState(new Set()); // 復習リストに追加された単語ID
-      
+
       const busy = useRef(false);
       const timerRef = useRef(null);
+
+      // コンボカウンターの位置（画面サイズに応じて動的に調整）
+      const [comboTop, setComboTop] = useState(120);
 
       // 画面サイズに応じたカードサイズの自動調整
       const [cardSize, setCardSize] = useState({
@@ -708,19 +711,19 @@
         const updateCardSize = () => {
           const width = window.innerWidth;
           const height = window.innerHeight;
-          
+
+          // コンボカウンターの位置を更新（画面比率ベース：9:16の縦比率より大きくなったら移動）
+          const aspectRatio = height / width;
+          const baseRatio = 16 / 9; // 1.777...
+          if (aspectRatio > baseRatio) {
+            setComboTop(120 + (aspectRatio - baseRatio) * 200);
+          } else {
+            setComboTop(120);
+          }
+
           // 画面サイズに応じてカードサイズを調整
           if (width < 360) {
             // 小さい画面
-            setCardSize({
-              height: 48,
-              fontSize: 12,
-              fontSizeLong: 10,
-              fontSizeEn: 11,
-              fontSizeEnLong: 9
-            });
-          } else if (width < 400) {
-            // 中くらいの画面
             setCardSize({
               height: 52,
               fontSize: 14,
@@ -728,14 +731,23 @@
               fontSizeEn: 13,
               fontSizeEnLong: 11
             });
-          } else if (width < 500) {
-            // 標準的な画面
+          } else if (width < 400) {
+            // 中くらいの画面
             setCardSize({
               height: 56,
               fontSize: 16,
               fontSizeLong: 14,
               fontSizeEn: 15,
               fontSizeEnLong: 13
+            });
+          } else if (width < 500) {
+            // 標準的な画面
+            setCardSize({
+              height: 60,
+              fontSize: 18,
+              fontSizeLong: 16,
+              fontSizeEn: 17,
+              fontSizeEnLong: 15
             });
           } else {
             // 大きい画面
@@ -1011,8 +1023,6 @@
                         });
                         // 追加された単語を記録
                         setAddedWords(prev => new Set([...prev, ...wordsToAdd.map(w => w.id)]));
-                        // チェックをクリアしてボタンを非表示にする
-                        setCheckedWords(new Set());
                       }
                     }}
                     style={{
@@ -1026,7 +1036,8 @@
                       fontSize: 14,
                       fontWeight: 700,
                       cursor: "pointer",
-                      boxShadow: "0 2px 0 #16a34a"
+                      boxShadow: "0 2px 0 #16a34a",
+                      opacity: checkedWords.size > 0 && Array.from(checkedWords).every(id => addedWords.has(id)) ? 0.5 : 1
                     }}
                   >
                     復習リストに追加する ({checkedWords.size})
@@ -1076,9 +1087,9 @@
 
       return (
         <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", flexDirection: "column", padding: 16 }}>
-          <div style={{ width: "100%", maxWidth: 400, margin: "0 auto", display: "flex", flexDirection: "column", flex: 1 }}>
+          <div style={{ width: "100%", maxWidth: 400, margin: "0 auto", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {/* タイマーバー */}
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12, flexShrink: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* ×ボタン */}
@@ -1116,15 +1127,17 @@
           </div>
 
           {/* カードエリア - 左列日本語、右列英語 */}
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 60, position: "relative" }}>
-            {/* コンボ表示 - カードエリアの上端 */}
-            <div style={{ position: "absolute", top: -25, left: 0, right: 0, textAlign: "center" }}>
-              <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
-                {combo > 0 ? `Combo: ${combo}` : ""}
-              </span>
-            </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flex: 1, alignItems: "center", position: "relative" }}>
+            {/* コンボ表示 - 絶対配置でカードのレイアウトに影響を与えない */}
+            {combo > 0 && (
+              <div style={{ position: "absolute", top: comboTop, left: 0, right: 0, textAlign: "center" }}>
+                <span style={{ fontSize: 20, fontWeight: 900, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+                  Combo: {combo}
+                </span>
+              </div>
+            )}
             {/* 日本語カード（左列） */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "48%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "48%" }}>
               {allCards.filter(c => c.type === "ja").map((card) => {
                 const isMatched = matchedPairs.has(card.pairId);
                 const isSelected = selected?.uid === card.uid;
@@ -1157,7 +1170,7 @@
             </div>
 
             {/* 英語カード（右列） */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "48%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "48%" }}>
               {allCards.filter(c => c.type === "en").map((card) => {
                 const isMatched = matchedPairs.has(card.pairId);
                 const isSelected = selected?.uid === card.uid;
@@ -1198,7 +1211,7 @@
     // REVIEW LIST SCREEN COMPONENT
     // ══════════════════════════════════════════════════════════════════
     function ReviewScreen({ reviewList, setReviewList, colors, darkMode, onMenu }) {
-      const [hideJapanese, setHideJapanese] = useState(false);
+      const [hideJapanese, setHideJapanese] = useState(true);
       const [visibleJapanese, setVisibleJapanese] = useState(new Set());
       const [deleteMode, setDeleteMode] = useState(false);
       const [selectedForDelete, setSelectedForDelete] = useState(new Set());
@@ -1344,7 +1357,11 @@
                           color: colors.mutedText,
                           textAlign: "right",
                           cursor: "pointer",
-                          userSelect: "none"
+                          userSelect: "none",
+                          height: 20,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end"
                         }}
                       >
                         {showJa && !isManuallyHidden ? word.ja : "????"}
