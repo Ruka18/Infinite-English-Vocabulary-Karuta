@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ボキャブラリー</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Nunito', -apple-system, 'Hiragino Sans', sans-serif; overflow: hidden; }
+    .fadeup { animation: fadeUp 0.35s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .shake { animation: shake 0.5s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .pulse { animation: pulse 0.3s ease; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    const GAME_TIME = 60;
+    const F = "'Nunito',-apple-system,'Hiragino Sans',sans-serif";
+
+    // ══════════════════════════════════════════════════════════════════
+    // 単語データ（各セクション100単語、全19セクション）
+    // ※ Target1900の単語をここに追加してください
+    // フォーマット: { id: 1, en: "英単語", ja: "日本語訳" },
+    // ══════════════════════════════════════════════════════════════════
+    const WORD_SETS = {
+      "Section 1|1〜100": [
+        { id: 1, en: "create", ja: "を創り出す" },
+        { id: 2, en: "increase", ja: "増加する" },
+        { id: 3, en: "improve", ja: "を向上させる" },
+        { id: 4, en: "mean", ja: "を意味する" },
+        { id: 5, en: "own", ja: "を所有している" },
+        { id: 6, en: "include", ja: "を含む" },
+        { id: 7, en: "consider", ja: "を見なす" },
+        { id: 8, en: "allow", ja: "を許す" },
+        { id: 9, en: "suggest", ja: "を提案する" },
+        { id: 10, en: "produce", ja: "を生産する" },
+        { id: 11, en: "decide", ja: "を決める" },
+        { id: 12, en: "offer", ja: "を提供する" },
+        { id: 13, en: "require", ja: "を要求する" },
+        { id: 14, en: "share", ja: "を共有する" },
+        { id: 15, en: "store", ja: "を保存する" },
+        { id: 16, en: "tend", ja: "傾向がある" },
+        { id: 17, en: "concern", ja: "心配している" },
+        { id: 18, en: "describe", ja: "について述べる" },
+        { id: 19, en: "involve", ja: "を関与させる" },
+        { id: 20, en: "reduce", ja: "を減らす" },
+        { id: 21, en: "design", ja: "を設計する" },
+        { id: 22, en: "force", ja: "に強いる" },
+        { id: 23, en: "limit", ja: "を制限［規制］する" },
+        { id: 24, en: "bear", ja: "に耐える" },
+        { id: 25, en: "affect", ja: "に影響を及ぼす" },
+        { id: 26, en: "deal", ja: "を処理する" },
+        { id: 27, en: "avoid", ja: "を避ける" },
+        { id: 28, en: "relate", ja: "を関連づける" },
+        { id: 29, en: "realize", ja: "に気づく" },
+        { id: 30, en: "encourage", ja: "を奨励する" },
+        { id: 31, en: "compare", ja: "を比較する" },
+        { id: 32, en: "measure", ja: "を測る" },
+        { id: 33, en: "exist", ja: "存在する" },
+        { id: 34, en: "mark", ja: "に印をつける" },
+        { id: 35, en: "challenge", ja: "に異議を唱える" },
+        { id: 36, en: "depend", ja: "頼る" },
+        { id: 37, en: "object", ja: "反対する" },
+        { id: 38, en: "demand", ja: "を要求する" },
+        { id: 39, en: "found", ja: "を設立する" },
+        { id: 40, en: "complete", ja: "を完成させる" },
+        { id: 41, en: "idea", ja: "考え" },
+        { id: 42, en: "accord", ja: "一致" },
+        { id: 43, en: "company", ja: "会社" },
+        { id: 44, en: "interest", ja: "興味" },
+        { id: 45, en: "research", ja: "研究" },
+        { id: 46, en: "cause", ja: "原因" },
+        { id: 47, en: "reason", ja: "理由" },
+        { id: 48, en: "effect", ja: "影響" },
+        { id: 49, en: "influence", ja: "影響（力）" },
+        { id: 50, en: "situation", ja: "状況" },
+        { id: 51, en: "environment", ja: "環境" },
+        { id: 52, en: "skill", ja: "技能" },
+        { id: 53, en: "matter", ja: "事柄" },
+        { id: 54, en: "view", ja: "見解" },
+        { id: 55, en: "value", ja: "価値" },
+        { id: 56, en: "species", ja: "種" },
+        { id: 57, en: "thought", ja: "考え" },
+        { id: 58, en: "knowledge", ja: "知識" },
+        { id: 59, en: "memory", ja: "記憶（力）" },
+        { id: 60, en: "practice", ja: "実践" },
+        { id: 61, en: "benefit", ja: "利益" },
+        { id: 62, en: "theory", ja: "学説" },
+        { id: 63, en: "issue", ja: "問題（点）" },
+        { id: 64, en: "experiment", ja: "実験" },
+        { id: 65, en: "article", ja: "記事" },
+        { id: 66, en: "focus", ja: "焦点" },
+        { id: 67, en: "subject", ja: "話題" },
+        { id: 68, en: "project", ja: "計画" },
+        { id: 69, en: "quality", ja: "質" },
+        { id: 70, en: "role", ja: "役割" },
+        { id: 71, en: "term", ja: "用語" },
+        { id: 72, en: "statement", ja: "声明" },
+        { id: 73, en: "material", ja: "材料" },
+        { id: 74, en: "evidence", ja: "証拠" },
+        { id: 75, en: "source", ja: "源" },
+        { id: 76, en: "community", ja: "社会" },
+        { id: 77, en: "technology", ja: "科学技術" },
+        { id: 78, en: "culture", ja: "文化" },
+        { id: 79, en: "appropriate", ja: "適切な" },
+        { id: 80, en: "likely", ja: "ありそうな" },
+        { id: 81, en: "possible", ja: "可能な" },
+        { id: 82, en: "individual", ja: "個々の" },
+        { id: 83, en: "public", ja: "公の" },
+        { id: 84, en: "common", ja: "共通の" },
+        { id: 85, en: "certain", ja: "確かな" },
+        { id: 86, en: "similar", ja: "似ている" },
+        { id: 87, en: "recent", ja: "最近の" },
+        { id: 88, en: "major", ja: "主要な" },
+        { id: 89, en: "patient", ja: "忍耐強い" },
+        { id: 90, en: "particular", ja: "特定の" },
+        { id: 91, en: "physical", ja: "身体の" },
+        { id: 92, en: "various", ja: "さまざまな" },
+        { id: 93, en: "available", ja: "手に入る" },
+        { id: 94, en: "native", ja: "出生地の" },
+        { id: 95, en: "political", ja: "政治（上）の" },
+        { id: 96, en: "due", ja: "予定された" },
+        { id: 97, en: "blank", ja: "空白の" },
+        { id: 98, en: "ancient", ja: "古代の" },
+        { id: 99, en: "correct", ja: "正しい" },
+        { id: 100, en: "despite", ja: "～にもかかわらず" },
+      ],
+      "Section 2|101〜200": [
+        { id: 101, en: "notice", ja: "に気づく" },
+        { id: 102, en: "refer", ja: "言及する" },
+        { id: 103, en: "approach", ja: "に近づく" },
+        { id: 104, en: "wonder", ja: "かなと思う" },
+        { id: 105, en: "imagine", ja: "想像する" },
+        { id: 106, en: "recognize", ja: "を識別できる" },
+        { id: 107, en: "solve", ja: "を解く" },
+        { id: 108, en: "occur", ja: "起こる" },
+        { id: 109, en: "argue", ja: "と主張する" },
+        { id: 110, en: "claim", ja: "と主張する" },
+        { id: 111, en: "express", ja: "を表す" },
+        { id: 112, en: "draw", ja: "を引き出す" },
+        { id: 113, en: "waste", ja: "を浪費する" },
+        { id: 114, en: "advance", ja: "を進歩させる" },
+        { id: 115, en: "spread", ja: "を広める" },
+        { id: 116, en: "prepare", ja: "を準備する" },
+        { id: 117, en: "gain", ja: "を獲得する" },
+        { id: 118, en: "achieve", ja: "を達成する" },
+        { id: 119, en: "establish", ja: "を確立する" },
+        { id: 120, en: "supply", ja: "を供給する" },
+        { id: 121, en: "suppose", ja: "と思う" },
+        { id: 122, en: "perform", ja: "行う" },
+        { id: 123, en: "prefer", ja: "のほうを好む" },
+        { id: 124, en: "determine", ja: "を決定する" },
+        { id: 125, en: "treat", ja: "を扱う" },
+        { id: 126, en: "prove", ja: "を証明する" },
+        { id: 127, en: "apply", ja: "を適用［応用］する" },
+        { id: 128, en: "mention", ja: "に言及する" },
+        { id: 129, en: "communicate", ja: "情報交換をする" },
+        { id: 130, en: "contain", ja: "を含む" },
+        { id: 131, en: "contact", ja: "と連絡を取る" },
+        { id: 132, en: "regard", ja: "を見なす" },
+        { id: 133, en: "respect", ja: "を尊敬する" },
+        { id: 134, en: "search", ja: "捜す" },
+        { id: 135, en: "connect", ja: "をつなぐ" },
+        { id: 136, en: "decline", ja: "減少する" },
+        { id: 137, en: "prevent", ja: "を妨げる" },
+        { id: 138, en: "suffer", ja: "苦しむ" },
+        { id: 139, en: "survive", ja: "を切り抜けて生き残る" },
+        { id: 140, en: "publish", ja: "を出版する" },
+        { id: 141, en: "opportunity", ja: "機会" },
+        { id: 142, en: "task", ja: "仕事" },
+        { id: 143, en: "industry", ja: "産業" },
+        { id: 144, en: "medium", ja: "媒体" },
+        { id: 145, en: "economy", ja: "経済（状態）" },
+        { id: 146, en: "policy", ja: "政策" },
+        { id: 147, en: "account", ja: "説明" },
+        { id: 148, en: "trade", ja: "貿易" },
+        { id: 149, en: "model", ja: "模範" },
+        { id: 150, en: "figure", ja: "数字" },
+        { id: 151, en: "cell", ja: "細胞" },
+        { id: 152, en: "image", ja: "印象" },
+        { id: 153, en: "emotion", ja: "感情" },
+        { id: 154, en: "stress", ja: "ストレス" },
+        { id: 155, en: "decade", ja: "10年間" },
+        { id: 156, en: "range", ja: "範囲" },
+        { id: 157, en: "character", ja: "性格" },
+        { id: 158, en: "advantage", ja: "利点" },
+        { id: 159, en: "phrase", ja: "句" },
+        { id: 160, en: "damage", ja: "損害" },
+        { id: 161, en: "impact", ja: "影響" },
+        { id: 162, en: "method", ja: "方法" },
+        { id: 163, en: "resource", ja: "資源" },
+        { id: 164, en: "region", ja: "地域" },
+        { id: 165, en: "medicine", ja: "薬" },
+        { id: 166, en: "detail", ja: "詳細（な情報）" },
+        { id: 167, en: "feature", ja: "特徴" },
+        { id: 168, en: "function", ja: "機能" },
+        { id: 169, en: "access", ja: "利用" },
+        { id: 170, en: "item", ja: "品目" },
+        { id: 171, en: "income", ja: "収入" },
+        { id: 172, en: "attitude", ja: "態度" },
+        { id: 173, en: "site", ja: "用地" },
+        { id: 174, en: "aspect", ja: "側面" },
+        { id: 175, en: "structure", ja: "構造" },
+        { id: 176, en: "habit", ja: "習慣" },
+        { id: 177, en: "link", ja: "関連" },
+        { id: 178, en: "instance", ja: "例" },
+        { id: 179, en: "positive", ja: "肯定的な" },
+        { id: 180, en: "negative", ja: "否定的な" },
+        { id: 181, en: "complex", ja: "複雑な" },
+        { id: 182, en: "current", ja: "現在の" },
+        { id: 183, en: "mental", ja: "精神の" },
+        { id: 184, en: "specific", ja: "特定の" },
+        { id: 185, en: "significant", ja: "重要な" },
+        { id: 186, en: "essential", ja: "必要不可欠な" },
+        { id: 187, en: "official", ja: "公用の" },
+        { id: 188, en: "financial", ja: "財政（上）の" },
+        { id: 189, en: "academic", ja: "学問の" },
+        { id: 190, en: "aware", ja: "気づいて" },
+        { id: 191, en: "worth", ja: "に値する" },
+        { id: 192, en: "potential", ja: "潜在的な" },
+        { id: 193, en: "active", ja: "積極的な" },
+        { id: 194, en: "digital", ja: "デジタル方式の" },
+        { id: 195, en: "mobile", ja: "可動［移動］式の" },
+        { id: 196, en: "novel", ja: "斬新な" },
+        { id: 197, en: "plastic", ja: "柔軟な" },
+        { id: 198, en: "chemical", ja: "化学の" },
+        { id: 199, en: "necessary", ja: "必要な" },
+        { id: 200, en: "eventually", ja: "結局（は）" },
+      ],
+      "Section 3|201〜300": [
+        { id: 201, en: "identify", ja: "を特定する" },
+        { id: 202, en: "represent", ja: "を表す" },
+        { id: 203, en: "indicate", ja: "を指し示す" },
+        { id: 204, en: "manage", ja: "をなんとか成し遂げる" },
+        { id: 205, en: "attend", ja: "に出席する" },
+        { id: 206, en: "maintain", ja: "を維持する" },
+        { id: 207, en: "survey", ja: "を調査する" },
+        { id: 208, en: "replace", ja: "に取って代わる" },
+        { id: 209, en: "sort", ja: "を分類する" },
+        { id: 210, en: "conduct", ja: "を実施する" },
+        { id: 211, en: "associate", ja: "を結び付けて考える" },
+        { id: 212, en: "attempt", ja: "を試みる" },
+        { id: 213, en: "promote", ja: "を促進する" },
+        { id: 214, en: "earn", ja: "を稼ぐ" },
+        { id: 215, en: "unite", ja: "を団結させる" },
+        { id: 216, en: "feed", ja: "に食べ物を与える" },
+        { id: 217, en: "seek", ja: "を追い求める" },
+        { id: 218, en: "observe", ja: "に気づく" },
+        { id: 219, en: "reveal", ja: "を明らかにする" },
+        { id: 220, en: "estimate", ja: "と推定する" },
+        { id: 221, en: "reflect", ja: "を反映する" },
+        { id: 222, en: "attract", ja: "を引きつける" },
+        { id: 223, en: "decrease", ja: "減少する" },
+        { id: 224, en: "ignore", ja: "を無視する" },
+        { id: 225, en: "match", ja: "合う" },
+        { id: 226, en: "define", ja: "を定義する" },
+        { id: 227, en: "adapt", ja: "適応する" },
+        { id: 228, en: "contribute", ja: "貢献する" },
+        { id: 229, en: "exchange", ja: "交換する" },
+        { id: 230, en: "display", ja: "を示す" },
+        { id: 231, en: "respond", ja: "反応する" },
+        { id: 232, en: "hide", ja: "を隠す" },
+        { id: 233, en: "doubt", ja: "ではないと思う" },
+        { id: 234, en: "remove", ja: "を取り除く" },
+        { id: 235, en: "wind", ja: "を巻く" },
+        { id: 236, en: "assume", ja: "を当然のことと思う" },
+        { id: 237, en: "relax", ja: "くつろぐ" },
+        { id: 238, en: "satisfy", ja: "を満足させる" },
+        { id: 239, en: "desire", ja: "を強く望む" },
+        { id: 240, en: "succeed", ja: "成功する" },
+        { id: 241, en: "concept", ja: "概念" },
+        { id: 242, en: "fashion", ja: "流行" },
+        { id: 243, en: "device", ja: "装置" },
+        { id: 244, en: "charge", ja: "料金" },
+        { id: 245, en: "contrast", ja: "対照" },
+        { id: 246, en: "colleague", ja: "同僚" },
+        { id: 247, en: "pain", ja: "苦痛" },
+        { id: 248, en: "bill", ja: "請求書" },
+        { id: 249, en: "content", ja: "内容" },
+        { id: 250, en: "section", ja: "部門" },
+        { id: 251, en: "audience", ja: "聴衆" },
+        { id: 252, en: "surface", ja: "表面" },
+        { id: 253, en: "crop", ja: "作物" },
+        { id: 254, en: "topic", ja: "話題" },
+        { id: 255, en: "technique", ja: "技術" },
+        { id: 256, en: "status", ja: "地位" },
+        { id: 257, en: "option", ja: "選択肢" },
+        { id: 258, en: "reward", ja: "報酬" },
+        { id: 259, en: "race", ja: "人種" },
+        { id: 260, en: "crime", ja: "罪" },
+        { id: 261, en: "conflict", ja: "争い" },
+        { id: 262, en: "struggle", ja: "闘い" },
+        { id: 263, en: "context", ja: "状況" },
+        { id: 264, en: "debate", ja: "討論" },
+        { id: 265, en: "fuel", ja: "燃料" },
+        { id: 266, en: "pollution", ja: "汚染" },
+        { id: 267, en: "trend", ja: "傾向" },
+        { id: 268, en: "balance", ja: "均衡" },
+        { id: 269, en: "traffic", ja: "交通" },
+        { id: 270, en: "strategy", ja: "戦略" },
+        { id: 271, en: "basis", ja: "基礎" },
+        { id: 272, en: "consequence", ja: "結果" },
+        { id: 273, en: "aim", ja: "目的" },
+        { id: 274, en: "ancestor", ja: "祖先" },
+        { id: 275, en: "gene", ja: "遺伝子" },
+        { id: 276, en: "track", ja: "跡" },
+        { id: 277, en: "revolution", ja: "革命" },
+        { id: 278, en: "progress", ja: "進歩" },
+        { id: 279, en: "cognitive", ja: "認知の" },
+        { id: 280, en: "ideal", ja: "理想的な" },
+        { id: 281, en: "efficient", ja: "効率的な" },
+        { id: 282, en: "universal", ja: "普遍的な" },
+        { id: 283, en: "vast", ja: "莫大な" },
+        { id: 284, en: "extra", ja: "追加の" },
+        { id: 285, en: "entire", ja: "全体の" },
+        { id: 286, en: "familiar", ja: "精通している" },
+        { id: 287, en: "obvious", ja: "明らかな" },
+        { id: 288, en: "moral", ja: "道徳（上）の" },
+        { id: 289, en: "ordinary", ja: "一般の" },
+        { id: 290, en: "equal", ja: "等しい" },
+        { id: 291, en: "previous", ja: "以前の" },
+        { id: 292, en: "false", ja: "間違った" },
+        { id: 293, en: "rare", ja: "まれな" },
+        { id: 294, en: "legal", ja: "法律の" },
+        { id: 295, en: "independent", ja: "独立した" },
+        { id: 296, en: "extreme", ja: "極端な" },
+        { id: 297, en: "actual", ja: "実際の" },
+        { id: 298, en: "willing", ja: "いとわない" },
+        { id: 299, en: "urban", ja: "都市の" },
+        { id: 300, en: "whereas", ja: "～するのに（対し）" },
+      ],
+      "Section 4|301〜400": [
+        // ここにTarget1900の301-400番の単語を追加
+      ],
+      "Section 5|401〜500": [
+        // ここにTarget1900の401-500番の単語を追加
+      ],
+      "Section 6|501〜600": [
+        // ここにTarget1900の501-600番の単語を追加
+      ],
+      "Section 7|601〜700": [
+        // ここにTarget1900の601-700番の単語を追加
+      ],
+      "Section 8|701〜800": [
+        // ここにTarget1900の701-800番の単語を追加
+      ],
+      "Section 9|801〜900": [
+        // ここにTarget1900の801-900番の単語を追加
+      ],
+      "Section 10|901〜1000": [
+        // ここにTarget1900の901-1000番の単語を追加
+      ],
+      "Section 11|1001〜1100": [
+        // ここにTarget1900の1001-1100番の単語を追加
+      ],
+      "Section 12|1101〜1200": [
+        // ここにTarget1900の1101-1200番の単語を追加
+      ],
+      "Section 13|1201〜1300": [
+        // ここにTarget1900の1201-1300番の単語を追加
+      ],
+      "Section 14|1301〜1400": [
+        // ここにTarget1900の1301-1400番の単語を追加
+      ],
+      "Section 15|1401〜1500": [
+        // ここにTarget1900の1401-1500番の単語を追加
+      ],
+      "Section 16|1501〜1600": [
+        // ここにTarget1900の1501-1600番の単語を追加
+      ],
+      "Section 17|1601〜1700": [
+        // ここにTarget1900の1601-1700番の単語を追加
+      ],
+      "Section 18|1701〜1800": [
+        // ここにTarget1900の1701-1800番の単語を追加
+      ],
+      "Section 19|1801〜1900": [
+        // ここにTarget1900の1801-1900番の単語を追加
+      ],
+    };
+
+    // ══════════════════════════════════════════════════════════════════
+    // MAIN APP
+    // ══════════════════════════════════════════════════════════════════
+    function App() {
+      const [screen, setScreen] = useState("menu");
+      const [darkMode, setDarkMode] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-dark-mode");
+        return saved ? JSON.parse(saved) : false;
+      });
+      const [isMuted, setIsMuted] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-muted");
+        return saved ? JSON.parse(saved) : false;
+      });
+      const [lastSection, setLastSection] = useState(null);
+      const [retryCounter, setRetryCounter] = useState(0);
+      const [reviewList, setReviewList] = useState(() => {
+        // localStorageから復習リストを読み込み
+        const saved = localStorage.getItem("vocabrary-review-list");
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      // 復習リストが変更されたらlocalStorageに保存
+      useEffect(() => {
+        localStorage.setItem("vocabrary-review-list", JSON.stringify(reviewList));
+      }, [reviewList]);
+
+      // ダークモードが変更されたらlocalStorageに保存
+      useEffect(() => {
+        localStorage.setItem("vocabrary-dark-mode", JSON.stringify(darkMode));
+      }, [darkMode]);
+
+      // ミュート設定が変更されたらlocalStorageに保存
+      useEffect(() => {
+        localStorage.setItem("vocabrary-muted", JSON.stringify(isMuted));
+      }, [isMuted]);
+
+      // ── Menu ──
+      const toggleDark = () => setDarkMode(!darkMode);
+
+      const colors = darkMode
+        ? { bg: "linear-gradient(145deg,#0f172a 0%,#1e1b4b 50%,#312e81 100%)", cardBg: "#1e293b", text: "#e2e8f0", mutedText: "#94a3b8", accent1: "#3b82f6", accent2: "#a855f7", success: "#22c55e", error: "#ef4444" }
+        : { bg: "linear-gradient(145deg,#1e3a8a 0%,#312e81 55%,#4c1d95 100%)", cardBg: "#fff", text: "#1e293b", mutedText: "#64748b", accent1: "#3b82f6", accent2: "#a855f7", success: "#22c55e", error: "#ef4444" };
+
+      // ═══════════════════════════════════════════════════════════════
+      // MENU SCREEN
+      // ═══════════════════════════════════════════════════════════════
+      if (screen === "menu") {
+        return (
+          <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div style={{ background: colors.cardBg, borderRadius: 24, padding: "28px 20px", width: "100%", maxWidth: 400, boxShadow: "0 24px 64px rgba(0,0,0,0.25)" }}>
+              {/* ヘッダー */}
+              <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 8 }}>
+                  <button onClick={() => setIsMuted(!isMuted)} style={{ position: "absolute", left: "calc(50% - 180px)", top: 8, background: "transparent", border: "none", cursor: "pointer", padding: 8 }}>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={colors.text}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                      {isMuted && <line x1="1" y1="1" x2="23" y2="23" />}
+                    </svg>
+                  </button>
+                  {/* かるたアイコン */}
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 30 30"
+                    fill="none"
+                    stroke={colors.text}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {/* 下のカード（右に傾ける） */}
+                    <g style={{ transform: "rotate(15deg)", transformOrigin: "13px 17px" }}>
+                      <rect x="10" y="6" width="12" height="16" rx="1" />
+                    </g>
+                    {/* 上のカード（左に傾ける） */}
+                    <g style={{ transform: "rotate(-10deg)", transformOrigin: "20px 19px" }}>
+                      <rect x="4" y="5" width="13" height="17" rx="1" fill={colors.cardBg} />
+                    </g>
+                  </svg>
+                  {/* ダークモードスイッチ */}
+                  <button
+                    onClick={toggleDark}
+                    style={{
+                      position: "absolute",
+                      right: "calc(50% - -65px)",
+                      top: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      background: darkMode ? "#0f172a" : "#cbd5e1",
+                      border: "none",
+                      borderRadius: 20,
+                      padding: 4,
+                      cursor: "pointer",
+                      width: 60,
+                      height: 32
+                    }}
+                  >
+                    {/* 太陽アイコン（左） */}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={darkMode ? "#94a3b8" : "#fef08a"}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ position: "absolute", left: 8 }}
+                    >
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                    {/* 月アイコン（右） */}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={darkMode ? "#6366f1" : "#94a3b8"}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ position: "absolute", right: 8 }}
+                    >
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    {/* スイッチのつまみ */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: darkMode ? 4 : 32,
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "left 0.3s ease"
+                      }}
+                    />
+                  </button>
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: colors.text }}>英単語無限カルタ</div>
+              </div>
+
+              {/* セクション選択 */}
+              <div style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: 10,
+                maxHeight: "60vh",
+                overflowY: "auto"
+              }} className="no-scrollbar">
+                {Object.entries(WORD_SETS).map(([key, words]) => {
+                  const [sec, range] = key.split("|");
+                  const isAvailable = words.length > 0;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => { if (isAvailable) { setLastSection(key); setScreen("game"); } }}
+                      disabled={!isAvailable}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "16px 20px", borderRadius: 16, border: "none",
+                        background: darkMode ? "#334155" : "#f1f5f9",
+                        cursor: isAvailable ? "pointer" : "not-allowed",
+                        fontFamily: F, fontSize: 15, fontWeight: 700, color: colors.text,
+                        boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1",
+                        opacity: isAvailable ? 1 : 0.5
+                      }}
+                    >
+                      <span>{sec}</span>
+                      <span style={{ fontSize: 12, color: colors.mutedText }}>
+                        {isAvailable ? range : "準備中"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 復習リスト確認ボタン */}
+              {reviewList.length > 0 && (
+                <button
+                  onClick={() => setScreen("review")}
+                  style={{
+                    marginTop: 12,
+                    padding: "14px 20px",
+                    borderRadius: 16,
+                    border: "none",
+                    background: darkMode ? "#334155" : "#f1f5f9",
+                    cursor: "pointer",
+                    fontFamily: F,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: colors.text,
+                    boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1"
+                  }}
+                >
+                  復習リスト確認 ({reviewList.length})
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // GAME or RESULT
+      // ═══════════════════════════════════════════════════════════════
+      if (screen === "game" || screen === "result") {
+        return (
+          <GameScreen
+            key={`${lastSection}-${retryCounter}`}
+            section={lastSection}
+            colors={colors}
+            darkMode={darkMode}
+            isMuted={isMuted}
+            onMenu={() => setScreen("menu")}
+            onRetry={() => { setRetryCounter(c => c + 1); setScreen("game"); }}
+            screen={screen}
+            setScreen={setScreen}
+            reviewList={reviewList}
+            setReviewList={setReviewList}
+          />
+        );
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // REVIEW LIST SCREEN
+      // ═══════════════════════════════════════════════════════════════
+      if (screen === "review") {
+        return (
+          <ReviewScreen
+            reviewList={reviewList}
+            setReviewList={setReviewList}
+            colors={colors}
+            darkMode={darkMode}
+            onMenu={() => setScreen("menu")}
+          />
+        );
+      }
+
+      return null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // GAME SCREEN COMPONENT
+    // ══════════════════════════════════════════════════════════════════
+    function GameScreen({ section, colors, darkMode, isMuted, onMenu, onRetry, screen, setScreen, reviewList, setReviewList }) {
+      const key = section;
+      const pool = WORD_SETS[key];
+      const [phase, setPhase] = useState("game");
+      const [allCards, setAllCards] = useState([]);
+      const [selected, setSelected] = useState(null);
+      const [matchedPairs, setMatchedPairs] = useState(new Set());
+      const [timeLeft, setTimeLeft] = useState(GAME_TIME);
+      const [totalPairs, setTotalPairs] = useState(0);
+      const [combo, setCombo] = useState(0);
+      const [maxCombo, setMaxCombo] = useState(0);
+      const [shakeCards, setShakeCards] = useState([]);
+      const [wrongWords, setWrongWords] = useState([]); // 間違えた単語
+      const [checkedWords, setCheckedWords] = useState(new Set()); // チェックされた単語ID
+      const [addedWords, setAddedWords] = useState(new Set()); // 復習リストに追加された単語ID
+      
+      const busy = useRef(false);
+      const timerRef = useRef(null);
+
+      // 画面サイズに応じたカードサイズの自動調整
+      const [cardSize, setCardSize] = useState({
+        height: 56,
+        fontSize: 15,
+        fontSizeLong: 13,
+        fontSizeEn: 14,
+        fontSizeEnLong: 12
+      });
+
+      useEffect(() => {
+        const updateCardSize = () => {
+          const width = window.innerWidth;
+          const height = window.innerHeight;
+          
+          // 画面サイズに応じてカードサイズを調整
+          if (width < 360) {
+            // 小さい画面
+            setCardSize({
+              height: 48,
+              fontSize: 12,
+              fontSizeLong: 10,
+              fontSizeEn: 11,
+              fontSizeEnLong: 9
+            });
+          } else if (width < 400) {
+            // 中くらいの画面
+            setCardSize({
+              height: 52,
+              fontSize: 14,
+              fontSizeLong: 12,
+              fontSizeEn: 13,
+              fontSizeEnLong: 11
+            });
+          } else if (width < 500) {
+            // 標準的な画面
+            setCardSize({
+              height: 56,
+              fontSize: 16,
+              fontSizeLong: 14,
+              fontSizeEn: 15,
+              fontSizeEnLong: 13
+            });
+          } else {
+            // 大きい画面
+            setCardSize({
+              height: Math.min(64, height * 0.08),
+              fontSize: Math.min(20, width * 0.04),
+              fontSizeLong: Math.min(18, width * 0.035),
+              fontSizeEn: Math.min(19, width * 0.038),
+              fontSizeEnLong: Math.min(17, width * 0.034)
+            });
+          }
+        };
+
+        updateCardSize();
+        window.addEventListener('resize', updateCardSize);
+        return () => window.removeEventListener('resize', updateCardSize);
+      }, []);
+
+      // 効果音
+      const playSound = useCallback(() => {
+        if (isMuted) return;
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        // 連続正解数に応じて音階をC4からC5まで8音（ドレミファソラシド）で変更
+        const scale = [
+          261.63, // C4 (ド)
+          293.66, // D4 (レ)
+          329.63, // E4 (ミ)
+          349.23, // F4 (ファ)
+          392.00, // G4 (ソ)
+          440.00, // A4 (ラ)
+          493.88, // B4 (シ)
+          523.25  // C5 (ド)
+        ];
+        const clampedCombo = Math.min(combo, 7); // 0-7のインデックス
+        oscillator.frequency.value = scale[clampedCombo];
+        oscillator.type = "sine";
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+      }, [isMuted, combo]);
+
+      // ゲーム初期化
+      const initGame = useCallback(() => {
+        if (!pool) return;
+        
+        // 5個の単語をランダムに選択（5ペア = 10枚カード）
+        const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+        
+        // 日本語カードと英語カードを作成して混ぜる
+        const ja = shuffled.map((w) => ({ uid: `ja-${w.id}`, text: w.ja, pairId: w.id, type: "ja" }));
+        const en = shuffled.map((w) => ({ uid: `en-${w.id}`, text: w.en, pairId: w.id, type: "en" }));
+        const mixed = [...ja, ...en].sort(() => Math.random() - 0.5);
+        
+        setAllCards(mixed);
+        setMatchedPairs(new Set());
+        setSelected(null);
+        setTimeLeft(GAME_TIME);
+        setTotalPairs(0);
+        setCombo(0);
+        setMaxCombo(0);
+        setWrongWords([]);
+        setCheckedWords(new Set());
+        setAddedWords(new Set());
+        setPhase("game");
+        busy.current = false;
+      }, [pool]);
+
+      // カードだけをリセット（カウンターとコンボは保持）
+      const resetCardsOnly = useCallback(() => {
+        if (!pool) return;
+        
+        // 5個の単語をランダムに選択（5ペア = 10枚カード）
+        const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+        
+        // 日本語カードと英語カードを作成して混ぜる
+        const ja = shuffled.map((w) => ({ uid: `ja-${w.id}`, text: w.ja, pairId: w.id, type: "ja" }));
+        const en = shuffled.map((w) => ({ uid: `en-${w.id}`, text: w.en, pairId: w.id, type: "en" }));
+        const mixed = [...ja, ...en].sort(() => Math.random() - 0.5);
+        
+        setAllCards(mixed);
+        setMatchedPairs(new Set());
+        setSelected(null);
+        busy.current = false;
+      }, [pool]);
+
+      // screenがresultからgameに変わった時だけphaseをリセット（「もう一度」対応）
+      useEffect(() => {
+        if (screen === "game" && phase === "result") {
+          setPhase("game");
+        }
+      }, [screen]);
+
+      // ゲーム開始
+      useEffect(() => {
+        if (screen === "game") {
+          initGame();
+        }
+      }, [screen, initGame]);
+
+      // タイマー
+      useEffect(() => {
+        if (phase !== "game") return;
+        
+        timerRef.current = setInterval(() => {
+          setTimeLeft(t => {
+            if (t <= 1) {
+              clearInterval(timerRef.current);
+              setPhase("result");
+              return 0;
+            }
+            return t - 1;
+          });
+        }, 1000);
+        
+        return () => clearInterval(timerRef.current);
+      }, [phase]);
+
+      // カードタップ処理
+      const handleTap = useCallback((card) => {
+        if (busy.current || phase !== "game") return;
+        if (matchedPairs.has(card.pairId)) return;
+        if (selected?.uid === card.uid) return;
+
+        if (!selected) {
+          setSelected(card);
+          return;
+        }
+
+        // 同じタイプは選択不可
+        if (selected.type === card.type) {
+          setSelected(card);
+          return;
+        }
+
+        // ペア判定
+        if (selected.pairId === card.pairId) {
+          // 正解
+          busy.current = true;
+          playSound();
+          setMatchedPairs(prev => new Set([...prev, card.pairId]));
+          setSelected(null);
+          setTotalPairs(p => p + 1);
+          setCombo(c => {
+            const newCombo = c + 1;
+            setMaxCombo(m => Math.max(m, newCombo));
+            return newCombo;
+          });
+
+          busy.current = false;
+          const newMatched = new Set([...matchedPairs, card.pairId]);
+          if (newMatched.size >= 5) {
+            // 0.1秒でカードだけリセット（カウンターとコンボは保持）
+            setTimeout(() => {
+              resetCardsOnly();
+            }, 100);
+          }
+        } else {
+          // 不正解
+          busy.current = true;
+          setShakeCards([selected.uid, card.uid]);
+          setCombo(0);
+          setSelected(null);
+          
+          // 間違えた単語を追加（重複なし）
+          setWrongWords(prev => {
+            const word = pool.find(w => w.id === selected.pairId);
+            if (word && !prev.find(w => w.id === word.id)) {
+              return [...prev, word];
+            }
+            return prev;
+          });
+          
+          setTimeout(() => {
+            setShakeCards([]);
+            busy.current = false;
+          }, 500);
+        }
+      }, [selected, phase, matchedPairs, playSound, initGame]);
+
+      // ═══════════════════════════════════════════════════════════════
+      // RESULT SCREEN
+      // ═══════════════════════════════════════════════════════════════
+      if (phase === "result") {
+        // 合計ペア数に応じたメッセージ
+        const getMessage = (pairs) => {
+          if (pairs < 10) return "まずまず";
+          if (pairs < 20) return "いい調子";
+          if (pairs < 30) return "すごい";
+          if (pairs < 40) return "素晴らしい";
+          if (pairs < 50) return "最高";
+          return "伝説";
+        };
+
+        return (
+          <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div style={{ background: colors.cardBg, borderRadius: 24, padding: "32px 24px", width: "100%", maxWidth: 400, boxShadow: "0 24px 64px rgba(0,0,0,0.25)", textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: colors.text, marginBottom: 24 }}>{getMessage(totalPairs)}</div>
+              
+              {/* スコア表示 */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+                <div style={{ flex: 1, background: darkMode ? "#064e3b" : "#f0fdf4", borderRadius: 16, padding: 16 }}>
+                  <div style={{ fontSize: 12, color: darkMode ? "#a7f3d0" : "#64748b", fontWeight: 700, marginBottom: 4 }}>正解ペア</div>
+                  <div style={{ fontSize: 40, fontWeight: 900, color: darkMode ? "#6ee7b7" : "#16a34a" }}>{totalPairs}</div>
+                </div>
+                <div style={{ flex: 1, background: darkMode ? "#581c87" : "#faf5ff", borderRadius: 16, padding: 16 }}>
+                  <div style={{ fontSize: 12, color: darkMode ? "#e9d5ff" : "#64748b", fontWeight: 700, marginBottom: 4 }}>最大コンボ</div>
+                  <div style={{ fontSize: 40, fontWeight: 900, color: darkMode ? "#c084fc" : "#9333ea" }}>{maxCombo}</div>
+                </div>
+              </div>
+
+              {/* 間違えた単語一覧 */}
+              {wrongWords.length > 0 && (
+                <div style={{ marginBottom: 24, textAlign: "left" }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: colors.text, marginBottom: 12 }}>間違えた単語</div>
+                  <div style={{ maxHeight: 200, overflowY: "auto", background: darkMode ? "#1e293b" : "#f8fafc", borderRadius: 12, padding: 12 }}>
+                    {wrongWords.map((word) => {
+                      const isAdded = addedWords.has(word.id);
+                      return (
+                        <div
+                          key={word.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "8px 0",
+                            borderBottom: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`,
+                            opacity: isAdded ? 0.4 : 1
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checkedWords.has(word.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCheckedWords(prev => new Set([...prev, word.id]));
+                              } else {
+                                setCheckedWords(prev => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(word.id);
+                                  return newSet;
+                                });
+                              }
+                            }}
+                            style={{ width: 20, height: 20, cursor: "pointer" }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{word.en}</div>
+                            <div style={{ fontSize: 12, color: colors.mutedText }}>{word.ja}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* 復習リストに追加するボタン */}
+                  <button
+                    onClick={() => {
+                      const wordsToAdd = wrongWords.filter(w => checkedWords.has(w.id));
+                      if (wordsToAdd.length > 0) {
+                        setReviewList(prev => {
+                          const newReviewList = [...prev];
+                          wordsToAdd.forEach(word => {
+                            if (!newReviewList.find(w => w.id === word.id)) {
+                              newReviewList.push(word);
+                            }
+                          });
+                          return newReviewList;
+                        });
+                        // 追加された単語を記録
+                        setAddedWords(prev => new Set([...prev, ...wordsToAdd.map(w => w.id)]));
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      marginTop: 12,
+                      padding: 12,
+                      borderRadius: 10,
+                      border: "none",
+                      background: colors.success,
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 0 #16a34a"
+                    }}
+                  >
+                    復習リストに追加する ({checkedWords.size})
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={onRetry}
+                style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "none",
+                  background: colors.accent2, color: "#fff", fontSize: 16,
+                  fontWeight: 900, cursor: "pointer", marginBottom: 10,
+                  boxShadow: `0 4px 0 ${darkMode ? "#7c3aed" : "#9333ea"}`
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}>
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 21h5v-5" />
+                </svg>
+                もう一度
+              </button>
+              <button
+                onClick={onMenu}
+                style={{
+                  width: "100%", padding: 14, borderRadius: 12,
+                  border: `2px solid ${darkMode ? "#475569" : "#cbd5e1"}`,
+                  background: "transparent", color: colors.text, fontSize: 16,
+                  fontWeight: 900, cursor: "pointer"
+                }}
+              >
+                メニューへ
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // GAME SCREEN
+      // ═══════════════════════════════════════════════════════════════
+      const pct = timeLeft / GAME_TIME;
+      const barColor = pct < 0.2 ? "#ef4444" : pct < 0.5 ? "#f59e0b" : "#22c55e";
+      const barBg = darkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.2)";
+
+      return (
+        <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", flexDirection: "column", padding: 16 }}>
+          <div style={{ width: "100%", maxWidth: 400, margin: "0 auto", display: "flex", flexDirection: "column", flex: 1 }}>
+          {/* タイマーバー */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* ×ボタン */}
+                <button
+                  onClick={() => {
+                    if (totalPairs === 0) {
+                      onMenu();
+                    } else {
+                      setPhase("result");
+                    }
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    fontSize: 18,
+                    color: "#fff",
+                    cursor: "pointer",
+                    padding: 0,
+                    lineHeight: 1
+                  }}
+                >
+                  ×
+                </button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>{timeLeft}秒</span>
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>{totalPairs}ペア</span>
+            </div>
+            <div style={{ background: barBg, borderRadius: 99, height: 8, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${pct * 100}%`, background: barColor, borderRadius: 99, transition: "width 0.3s" }} />
+            </div>
+          </div>
+
+          {/* カードエリア - 左列日本語、右列英語 */}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 80, position: "relative" }}>
+            {/* コンボ表示 - カードエリアの上端 */}
+            <div style={{ position: "absolute", top: -30, left: 0, right: 0, textAlign: "center" }}>
+              <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+                {combo > 0 ? `Combo: ${combo}` : ""}
+              </span>
+            </div>
+            {/* 日本語カード（左列） */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "45%" }}>
+              {allCards.filter(c => c.type === "ja").map((card) => {
+                const isMatched = matchedPairs.has(card.pairId);
+                const isSelected = selected?.uid === card.uid;
+                const isShaking = shakeCards.includes(card.uid);
+                
+                return (
+                  <button
+                    key={card.uid}
+                    onClick={() => handleTap(card)}
+                    disabled={isMatched}
+                    style={{
+                      height: cardSize.height,
+                      borderRadius: 10,
+                      border: "none",
+                      fontSize: card.text.length > 6 ? cardSize.fontSizeLong : cardSize.fontSize,
+                      fontWeight: 700,
+                      fontFamily: F,
+                      cursor: isMatched ? "default" : "pointer",
+                      background: isMatched ? "rgba(34,197,94,0.3)" : isSelected ? colors.accent1 : darkMode ? "#334155" : "#fff",
+                      color: isMatched ? "#16a34a" : isSelected ? "#fff" : colors.text,
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      opacity: isMatched ? 0.5 : 1,
+                      animation: isShaking ? "shake 0.5s ease" : undefined
+                    }}
+                  >
+                    {card.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 英語カード（右列） */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "45%" }}>
+              {allCards.filter(c => c.type === "en").map((card) => {
+                const isMatched = matchedPairs.has(card.pairId);
+                const isSelected = selected?.uid === card.uid;
+                const isShaking = shakeCards.includes(card.uid);
+                
+                return (
+                  <button
+                    key={card.uid}
+                    onClick={() => handleTap(card)}
+                    disabled={isMatched}
+                    style={{
+                      height: cardSize.height,
+                      borderRadius: 10,
+                      border: "none",
+                      fontSize: card.text.length > 8 ? cardSize.fontSizeEnLong : cardSize.fontSizeEn,
+                      fontWeight: 700,
+                      fontFamily: F,
+                      cursor: isMatched ? "default" : "pointer",
+                      background: isMatched ? "rgba(34,197,94,0.3)" : isSelected ? colors.accent2 : darkMode ? "#334155" : "#fff",
+                      color: isMatched ? "#16a34a" : isSelected ? "#fff" : colors.text,
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      opacity: isMatched ? 0.5 : 1,
+                      animation: isShaking ? "shake 0.5s ease" : undefined
+                    }}
+                  >
+                    {card.text}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // REVIEW LIST SCREEN COMPONENT
+    // ══════════════════════════════════════════════════════════════════
+    function ReviewScreen({ reviewList, setReviewList, colors, darkMode, onMenu }) {
+      const [hideJapanese, setHideJapanese] = useState(false);
+      const [visibleJapanese, setVisibleJapanese] = useState(new Set());
+      const [deleteMode, setDeleteMode] = useState(false);
+      const [selectedForDelete, setSelectedForDelete] = useState(new Set());
+
+      const toggleJapanese = (wordId) => {
+        setVisibleJapanese(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(wordId)) {
+            newSet.delete(wordId);
+          } else {
+            newSet.add(wordId);
+          }
+          return newSet;
+        });
+      };
+
+      const toggleAllJapanese = () => {
+        setHideJapanese(!hideJapanese);
+        setVisibleJapanese(new Set());
+      };
+
+      const clearReviewList = () => {
+        setDeleteMode(!deleteMode);
+        setSelectedForDelete(new Set());
+      };
+
+      const deleteSelected = () => {
+        if (selectedForDelete.size > 0) {
+          setReviewList(prev => prev.filter(w => !selectedForDelete.has(w.id)));
+          setSelectedForDelete(new Set());
+          setDeleteMode(false);
+        }
+      };
+
+      // JSONファイルの順番（ターゲット1900の順番）でソート
+      const sortedReviewList = [...reviewList].sort((a, b) => a.id - b.id);
+
+      return (
+        <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", flexDirection: "column", padding: 16 }}>
+          <div style={{ width: "100%", maxWidth: 400, margin: "0 auto", flex: 1 }}>
+            {/* ヘッダー */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <button
+                onClick={onMenu}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: 24,
+                  color: "#fff",
+                  cursor: "pointer",
+                  padding: 8
+                }}
+              >
+                ×
+              </button>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>復習リスト</div>
+              <button
+                onClick={clearReviewList}
+                style={{
+                  background: deleteMode ? colors.error : "transparent",
+                  border: deleteMode ? "none" : `1px solid ${colors.error}`,
+                  fontSize: 14,
+                  color: deleteMode ? "#fff" : colors.error,
+                  cursor: "pointer",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontWeight: 700
+                }}
+              >
+                {deleteMode ? "キャンセル" : "削除モード"}
+              </button>
+            </div>
+
+            {/* 日本語を隠す/表示するボタン */}
+            <button
+              onClick={toggleAllJapanese}
+              style={{
+                width: "100%",
+                padding: 12,
+                borderRadius: 12,
+                border: "none",
+                background: darkMode ? "#334155" : "#f1f5f9",
+                color: colors.text,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                marginBottom: 16,
+                fontFamily: F
+              }}
+            >
+              {hideJapanese ? "日本語を表示する" : "日本語を隠す"}
+            </button>
+
+            {/* 復習リスト */}
+            <div style={{ background: colors.cardBg, borderRadius: 16, padding: 16, flex: 1, overflowY: "auto" }}>
+              {sortedReviewList.length === 0 ? (
+                <div style={{ textAlign: "center", color: colors.mutedText, padding: 40 }}>
+                  復習リストは空です
+                </div>
+              ) : (
+                sortedReviewList.map((word) => {
+                  const showJa = !hideJapanese || visibleJapanese.has(word.id);
+                  const isManuallyHidden = !hideJapanese && visibleJapanese.has(word.id);
+                  return (
+                    <div
+                      key={word.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "12px 0",
+                        borderBottom: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`
+                      }}
+                    >
+                      {deleteMode && (
+                        <input
+                          type="checkbox"
+                          checked={selectedForDelete.has(word.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedForDelete(prev => new Set([...prev, word.id]));
+                            } else {
+                              setSelectedForDelete(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(word.id);
+                                return newSet;
+                              });
+                            }
+                          }}
+                          style={{ width: 20, height: 20, cursor: "pointer", marginRight: 12 }}
+                        />
+                      )}
+                      <div style={{ width: 40, fontSize: 12, color: colors.mutedText, fontWeight: 700 }}>
+                        #{word.id}
+                      </div>
+                      <div style={{ flex: 1, fontSize: 15, fontWeight: 700, color: colors.text }}>
+                        {word.en}
+                      </div>
+                      <div
+                        onClick={() => toggleJapanese(word.id)}
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          color: colors.mutedText,
+                          textAlign: "right",
+                          cursor: "pointer",
+                          userSelect: "none"
+                        }}
+                      >
+                        {showJa && !isManuallyHidden ? word.ja : "????"}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* 削除モード時の削除ボタン */}
+            {deleteMode && (
+              <button
+                onClick={deleteSelected}
+                disabled={selectedForDelete.size === 0}
+                style={{
+                  width: "100%",
+                  marginTop: 16,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: "none",
+                  background: selectedForDelete.size > 0 ? colors.error : darkMode ? "#334155" : "#cbd5e1",
+                  color: selectedForDelete.size > 0 ? "#fff" : colors.mutedText,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: selectedForDelete.size > 0 ? "pointer" : "not-allowed",
+                  fontFamily: F
+                }}
+              >
+                選択した単語を削除する ({selectedForDelete.size})
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
