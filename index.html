@@ -13,7 +13,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     body { font-family: 'Nunito', -apple-system, 'Hiragino Sans', sans-serif; overflow: hidden; }
     .fadeup { animation: fadeUp 0.35s ease; }
     @keyframes fadeUp {
@@ -1582,7 +1582,7 @@
           setTimeout(() => {
             setShakeCards([]);
             busy.current = false;
-          }, 500);
+          }, 300);
         }
       }, [selected, phase, matchedPairs, playSound, initGame]);
 
