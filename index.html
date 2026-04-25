@@ -603,30 +603,28 @@
                 })}
               </div>
 
-              {/* 復習リスト確認ボタン */}
-              {reviewList.length > 0 && (
-                <button
-                  onClick={() => setScreen("review")}
-                  style={{
-                    marginTop: 12,
-                    padding: "14px 20px",
-                    borderRadius: 16,
-                    border: "none",
-                    background: darkMode ? "#334155" : "#f1f5f9",
-                    cursor: "pointer",
-                    fontFamily: F,
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: colors.text,
-                    boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1"
-                  }}
-                >
-                  復習リスト確認 ({reviewList.length})
-                </button>
-              )}
-
-              {/* バージョン表示 */}
-              <div style={{ position: "absolute", bottom: 16, left: 16 }}>
+              {/* 復習リスト確認ボタンとバージョン */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                {reviewList.length > 0 && (
+                  <button
+                    onClick={() => setScreen("review")}
+                    style={{
+                      padding: "14px 20px",
+                      borderRadius: 16,
+                      border: "none",
+                      background: darkMode ? "#334155" : "#f1f5f9",
+                      cursor: "pointer",
+                      fontFamily: F,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: colors.text,
+                      boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1"
+                    }}
+                  >
+                    復習リスト確認 ({reviewList.length})
+                  </button>
+                )}
+                {/* バージョン表示 */}
                 <span style={{ fontSize: 12, color: colors.mutedText, fontFamily: F }}>
                   v1.0.0
                 </span>
