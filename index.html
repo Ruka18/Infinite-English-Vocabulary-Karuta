@@ -1334,6 +1334,7 @@
       const [allCards, setAllCards] = useState([]);
       const [selected, setSelected] = useState(null);
       const [hasSelectedCard, setHasSelectedCard] = useState(false);
+      const [endedByButton, setEndedByButton] = useState(false);
       const [matchedPairs, setMatchedPairs] = useState(new Set());
       const [timeLeft, setTimeLeft] = useState(GAME_TIME);
       const [totalPairs, setTotalPairs] = useState(0);
@@ -1591,12 +1592,13 @@
       if (phase === "result") {
         // 合計ペア数に応じたメッセージ
         const getMessage = (pairs) => {
-          if (pairs < 10) return "まずまず";
-          if (pairs < 20) return "いい調子";
-          if (pairs < 30) return "すごい";
-          if (pairs < 40) return "素晴らしい";
-          if (pairs < 50) return "最高";
-          return "伝説";
+          if (endedByButton) return "終了";
+          if (pairs < 10) return "要復習";
+          if (pairs < 30) return "がんばろう";
+          if (pairs < 40) return "あと一歩！";
+          if (pairs < 50) return "いいペース！";
+          if (pairs < 60) return "素晴らしい";
+          return "完璧";
         };
 
         return (
@@ -1753,6 +1755,7 @@
                 <button
                   onClick={() => {
                     if (hasSelectedCard) {
+                      setEndedByButton(true);
                       setPhase("result");
                     } else {
                       onMenu();
