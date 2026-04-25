@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>英単語無限カルタ</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -724,6 +728,25 @@
         const saved = localStorage.getItem("vocabrary-review-list");
         return saved ? JSON.parse(saved) : [];
       });
+      const [customMode, setCustomMode] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-custom-mode");
+        return saved ? JSON.parse(saved) : null;
+      }); // "section" | "number" | null
+      const [selectedSections, setSelectedSections] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-custom-sections");
+        return saved ? JSON.parse(saved) : [];
+      });
+      const [startNumber, setStartNumber] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-custom-start");
+        return saved ? saved : "";
+      });
+      const [endNumber, setEndNumber] = useState(() => {
+        const saved = localStorage.getItem("vocabrary-custom-end");
+        return saved ? saved : "";
+      });
+      const [customWords, setCustomWords] = useState([]);
+      const [customError, setCustomError] = useState("");
+      const [reviewWords, setReviewWords] = useState([]);
 
       // 復習リストが変更されたらlocalStorageに保存
       useEffect(() => {
@@ -734,6 +757,23 @@
       useEffect(() => {
         localStorage.setItem("vocabrary-dark-mode", JSON.stringify(darkMode));
       }, [darkMode]);
+
+      // カスタム設定が変更されたらlocalStorageに保存
+      useEffect(() => {
+        localStorage.setItem("vocabrary-custom-mode", JSON.stringify(customMode));
+      }, [customMode]);
+
+      useEffect(() => {
+        localStorage.setItem("vocabrary-custom-sections", JSON.stringify(selectedSections));
+      }, [selectedSections]);
+
+      useEffect(() => {
+        localStorage.setItem("vocabrary-custom-start", startNumber);
+      }, [startNumber]);
+
+      useEffect(() => {
+        localStorage.setItem("vocabrary-custom-end", endNumber);
+      }, [endNumber]);
 
       // ミュート設定が変更されたらlocalStorageに保存
       useEffect(() => {
@@ -866,13 +906,67 @@
               </div>
 
               {/* セクション選択 */}
-              <div style={{ 
-                display: "flex", 
-                flexDirection: "column", 
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
                 gap: 10,
                 maxHeight: "60vh",
                 overflowY: "auto"
               }} className="no-scrollbar">
+                {/* カスタムセクションボタン */}
+                <button
+                  onClick={() => setScreen("custom")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 20px",
+                    borderRadius: 16,
+                    border: "none",
+                    background: darkMode ? "#6366f1" : "#6366f1",
+                    cursor: "pointer",
+                    fontFamily: F,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#fff",
+                    boxShadow: darkMode ? "0 2px 0 #4338ca" : "0 2px 0 #4338ca"
+                  }}
+                >
+                  <span>カスタム</span>
+                  <span style={{ fontSize: 12 }}>範囲を自由に設定</span>
+                </button>
+                {/* 復習リスト特訓ボタン */}
+                {reviewList.length > 0 && (
+                  <button
+                    onClick={() => {
+                      // 復習リストの単語を番号順に抽出
+                      const allWords = Object.values(WORD_SETS).flat();
+                      const reviewIds = reviewList.map(w => w.id);
+                      const words = allWords.filter(w => reviewIds.includes(w.id)).sort((a, b) => a.id - b.id);
+                      setReviewWords(words);
+                      setLastSection("review");
+                      setScreen("game");
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "16px 20px",
+                      borderRadius: 16,
+                      border: "none",
+                      background: darkMode ? "#22c55e" : "#22c55e",
+                      cursor: "pointer",
+                      fontFamily: F,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#fff",
+                      boxShadow: darkMode ? "0 2px 0 #16a34a" : "0 2px 0 #16a34a"
+                    }}
+                  >
+                    <span>復習リスト特訓</span>
+                    <span style={{ fontSize: 12 }}>{reviewList.length}単語</span>
+                  </button>
+                )}
                 {Object.entries(WORD_SETS).map(([key, words]) => {
                   const [sec, range] = key.split("|");
                   const isAvailable = words.length > 0;
@@ -923,9 +1017,257 @@
                 )}
                 {/* バージョン表示 */}
                 <span style={{ fontSize: 12, color: colors.mutedText, fontFamily: F }}>
-                  v1.0.1
+                  v1.0.2
                 </span>
               </div>
+            </div>
+          </div>
+        );
+      }
+
+      // CUSTOM SCREEN
+      // ═══════════════════════════════════════════════════════════════
+      if (screen === "custom") {
+        return (
+          <div className="fadeup" style={{ minHeight: "100dvh", background: colors.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div style={{ background: colors.cardBg, borderRadius: 24, padding: "28px 20px", width: "100%", maxWidth: 400, boxShadow: "0 24px 64px rgba(0,0,0,0.25)" }}>
+              {/* ヘッダー */}
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
+                <button
+                  onClick={() => {
+                    setScreen("menu");
+                    setCustomError("");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 8,
+                    marginRight: 8
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div style={{ fontSize: 20, fontWeight: 900, color: colors.text }}>カスタム範囲設定</div>
+              </div>
+
+              {/* モード選択 */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: colors.text, marginBottom: 10 }}>出題範囲の設定方法</div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    onClick={() => {
+                      setCustomMode("section");
+                      setSelectedSections([]);
+                      setStartNumber("");
+                      setEndNumber("");
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "none",
+                      background: customMode === "section" ? "#6366f1" : darkMode ? "#334155" : "#f1f5f9",
+                      cursor: "pointer",
+                      fontFamily: F,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: customMode === "section" ? "#fff" : colors.text,
+                      boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1"
+                    }}
+                  >
+                    セクションから選ぶ
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCustomMode("number");
+                      setSelectedSections([]);
+                      setStartNumber("");
+                      setEndNumber("");
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "none",
+                      background: customMode === "number" ? "#6366f1" : darkMode ? "#334155" : "#f1f5f9",
+                      cursor: "pointer",
+                      fontFamily: F,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: customMode === "number" ? "#fff" : colors.text,
+                      boxShadow: darkMode ? "0 2px 0 #1e293b" : "0 2px 0 #cbd5e1"
+                    }}
+                  >
+                    出題番号で選ぶ
+                  </button>
+                </div>
+              </div>
+
+              {/* セクションから選ぶ */}
+              {customMode === "section" && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: colors.text, marginBottom: 10 }}>出題するセクションを選択</div>
+                  <div style={{ maxHeight: "40vh", overflowY: "auto" }} className="no-scrollbar">
+                    {Object.entries(WORD_SETS).map(([key, words]) => {
+                      const [sec, range] = key.split("|");
+                      const isAvailable = words.length > 0;
+                      const isSelected = selectedSections.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            if (isAvailable) {
+                              if (isSelected) {
+                                setSelectedSections(selectedSections.filter(s => s !== key));
+                              } else {
+                                setSelectedSections([...selectedSections, key]);
+                              }
+                            }
+                          }}
+                          disabled={!isAvailable}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "12px 16px",
+                            borderRadius: 12,
+                            border: isSelected ? "2px solid #6366f1" : "2px solid transparent",
+                            background: isSelected ? (darkMode ? "#334155" : "#f1f5f9") : (darkMode ? "#1e293b" : "#e2e8f0"),
+                            cursor: isAvailable ? "pointer" : "not-allowed",
+                            fontFamily: F,
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: colors.text,
+                            marginBottom: 8,
+                            opacity: isAvailable ? 1 : 0.5
+                          }}
+                        >
+                          <span>{sec}</span>
+                          <span style={{ fontSize: 12, color: colors.mutedText }}>
+                            {isAvailable ? range : "準備中"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 出題番号で選ぶ */}
+              {customMode === "number" && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: colors.text, marginBottom: 10 }}>出題番号範囲を入力</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <input
+                      type="number"
+                      value={startNumber}
+                      onChange={(e) => setStartNumber(e.target.value)}
+                      placeholder="開始番号"
+                      style={{
+                        width: "40%",
+                        padding: "12px 12px",
+                        borderRadius: 12,
+                        border: "none",
+                        background: darkMode ? "#334155" : "#f1f5f9",
+                        fontFamily: F,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: colors.text,
+                        boxSizing: "border-box"
+                      }}
+                    />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: colors.text, width: "10%", textAlign: "center" }}>〜</span>
+                    <input
+                      type="number"
+                      value={endNumber}
+                      onChange={(e) => setEndNumber(e.target.value)}
+                      placeholder="終了番号"
+                      style={{
+                        width: "40%",
+                        padding: "12px 12px",
+                        borderRadius: 12,
+                        border: "none",
+                        background: darkMode ? "#334155" : "#f1f5f9",
+                        fontFamily: F,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: colors.text,
+                        boxSizing: "border-box"
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* エラーメッセージ表示 */}
+              {customError && (
+                <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 12, background: "#ef4444", color: "#fff", fontSize: 14, fontWeight: 700 }}>
+                  {customError}
+                </div>
+              )}
+
+              {/* 開始ボタン */}
+              <button
+                onClick={() => {
+                  setCustomError("");
+                  if (customMode === "section") {
+                    if (selectedSections.length === 0) {
+                      setCustomError("セクションを選択してください");
+                      return;
+                    }
+                    // セクションから選択した単語を抽出
+                    const words = selectedSections.flatMap(key => WORD_SETS[key]);
+                    if (words.length === 0) {
+                      setCustomError("出題対象の単語がありません");
+                      return;
+                    }
+                    setCustomWords(words);
+                    setLastSection("custom");
+                    setScreen("game");
+                  } else if (customMode === "number") {
+                    const start = parseInt(startNumber);
+                    const end = parseInt(endNumber);
+                    if (!start || !end) {
+                      setCustomError("開始番号と終了番号を入力してください");
+                      return;
+                    }
+                    if (start > end) {
+                      setCustomError("開始番号は終了番号以下にしてください");
+                      return;
+                    }
+                    // 番号範囲の単語を抽出
+                    const allWords = Object.values(WORD_SETS).flat();
+                    const words = allWords.filter(w => w.id >= start && w.id <= end);
+                    if (words.length === 0) {
+                      setCustomError("指定範囲内の単語がありません");
+                      return;
+                    }
+                    setCustomWords(words);
+                    setLastSection("custom");
+                    setScreen("game");
+                  }
+                }}
+                disabled={!customMode || (customMode === "section" && selectedSections.length === 0) || (customMode === "number" && (!startNumber || !endNumber))}
+                style={{
+                  width: "100%",
+                  padding: "16px 20px",
+                  borderRadius: 16,
+                  border: "none",
+                  background: darkMode ? "#6366f1" : "#6366f1",
+                  cursor: customMode ? "pointer" : "not-allowed",
+                  fontFamily: F,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: "#fff",
+                  boxShadow: darkMode ? "0 2px 0 #4338ca" : "0 2px 0 #4338ca",
+                  opacity: customMode ? 1 : 0.5
+                }}
+              >
+                開始
+              </button>
             </div>
           </div>
         );
@@ -939,6 +1281,8 @@
           <GameScreen
             key={`${lastSection}-${retryCounter}`}
             section={lastSection}
+            customWords={customWords}
+            reviewWords={reviewWords}
             colors={colors}
             darkMode={darkMode}
             isMuted={isMuted}
@@ -973,9 +1317,19 @@
     // ══════════════════════════════════════════════════════════════════
     // GAME SCREEN COMPONENT
     // ══════════════════════════════════════════════════════════════════
-    function GameScreen({ section, colors, darkMode, isMuted, onMenu, onRetry, screen, setScreen, reviewList, setReviewList }) {
+    function GameScreen({ section, customWords, reviewWords, colors, darkMode, isMuted, onMenu, onRetry, screen, setScreen, reviewList, setReviewList }) {
       const key = section;
-      const pool = WORD_SETS[key];
+      const pool = React.useMemo(() => {
+        if (section === "custom") {
+          return customWords;
+        } else if (section === "review") {
+          const allWords = Object.values(WORD_SETS).flat();
+          const reviewIds = reviewList.map(w => w.id);
+          return allWords.filter(w => reviewIds.includes(w.id)).sort((a, b) => a.id - b.id);
+        } else {
+          return WORD_SETS[key];
+        }
+      }, [section, customWords, reviewList, key]);
       const [phase, setPhase] = useState("game");
       const [allCards, setAllCards] = useState([]);
       const [selected, setSelected] = useState(null);
@@ -1280,22 +1634,24 @@
                             opacity: isAdded ? 0.4 : 1
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={checkedWords.has(word.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setCheckedWords(prev => new Set([...prev, word.id]));
-                              } else {
-                                setCheckedWords(prev => {
-                                  const newSet = new Set(prev);
-                                  newSet.delete(word.id);
-                                  return newSet;
-                                });
-                              }
-                            }}
-                            style={{ width: 20, height: 20, cursor: "pointer" }}
-                          />
+                          {section !== "review" && (
+                            <input
+                              type="checkbox"
+                              checked={checkedWords.has(word.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCheckedWords(prev => new Set([...prev, word.id]));
+                                } else {
+                                  setCheckedWords(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.delete(word.id);
+                                    return newSet;
+                                  });
+                                }
+                              }}
+                              style={{ width: 20, height: 20, cursor: "pointer" }}
+                            />
+                          )}
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{word.en}</div>
                             <div style={{ fontSize: 12, color: colors.mutedText }}>{word.ja}</div>
@@ -1305,20 +1661,21 @@
                     })}
                   </div>
                   {/* 復習リストに追加するボタン */}
-                  <button
-                    onClick={() => {
-                      const wordsToAdd = wrongWords.filter(w => checkedWords.has(w.id));
-                      if (wordsToAdd.length > 0) {
-                        setReviewList(prev => {
-                          const newReviewList = [...prev];
-                          wordsToAdd.forEach(word => {
-                            if (!newReviewList.find(w => w.id === word.id)) {
-                              newReviewList.push(word);
-                            }
+                  {section !== "review" && (
+                    <button
+                      onClick={() => {
+                        const wordsToAdd = wrongWords.filter(w => checkedWords.has(w.id));
+                        if (wordsToAdd.length > 0) {
+                          setReviewList(prev => {
+                            const newReviewList = [...prev];
+                            wordsToAdd.forEach(word => {
+                              if (!newReviewList.find(w => w.id === word.id)) {
+                                newReviewList.push(word);
+                              }
+                            });
+                            return newReviewList;
                           });
-                          return newReviewList;
-                        });
-                        // 追加された単語を記録
+                          // 追加された単語を記録
                         setAddedWords(prev => new Set([...prev, ...wordsToAdd.map(w => w.id)]));
                       }
                     }}
@@ -1339,6 +1696,7 @@
                   >
                     復習リストに追加する ({checkedWords.size})
                   </button>
+                  )}
                 </div>
               )}
 
